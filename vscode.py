@@ -102,8 +102,14 @@ class VSCode(dotbot.Plugin):
         try:
             installed_extensions = code.installed_extensions()
             for extension in installed_extensions:
-                if extension.lower() not in vscodefile_extensions:
-                    need_remove.append(extension)
+                extension_lower = extension.lower()
+                if extension_lower not in vscodefile_extensions:
+                    print(
+                        "Extension '{}' is installed, but is not in vscodefile.".format(
+                            extension_lower
+                        )
+                    )
+                    print("You might want to add it to use on other machines.")
 
             for extension in vscodefile_extensions:
                 if extension.lower() not in installed_extensions:
@@ -132,10 +138,14 @@ class VSCodeInstance(object):
     @property
     def installed(self):
         return self._binary is not None
-
-    def installed_extensions(self):
+    
+    def install_check(self):
         if not self.installed:
             raise VSCodeError("{} is not installed.".format(self._name))
+
+    def installed_extensions(self):
+        self.install_check()
+
         output = check_output([self._binary, "--list-extensions"]).decode(
             sys.getdefaultencoding()
         )
@@ -143,13 +153,11 @@ class VSCodeInstance(object):
         return set(line.lower() for line in output.splitlines())
 
     def install(self, extension):
-        if not self.installed:
-            raise VSCodeError("{} is not installed.".format(self._name))
+        self.install_check()
         call([self._binary, "--install-extension", extension])
 
     def uninstall(self, extension):
-        if not self.installed:
-            raise VSCodeError("{} is not installed.".format(self._name))
+        self.install_check()
         call([self._binary, "--uninstall-extension", extension])
 
 
